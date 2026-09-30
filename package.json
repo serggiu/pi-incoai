@@ -13,6 +13,10 @@
 	],
 	"license": "MIT",
 	"author": "Sergiu Truta",
+	"homepage": "https://github.com/serggiu/pi-incoai#readme",
+	"bugs": {
+		"url": "https://github.com/serggiu/pi-incoai/issues"
+	},
 	"type": "module",
 	"files": [
 		"extensions",
@@ -22,6 +26,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/serggiu/pi-incoai.git"
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-ai": "*",

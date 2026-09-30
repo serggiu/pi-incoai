@@ -12,7 +12,7 @@ the `incoai` provider, adds the public model catalog, and refreshes it from
 
 ```bash
 pi install npm:pi-incoai          # from npm
-pi install git:github.com/<you>/pi-incoai   # from git
+pi install git:github.com/serggiu/pi-incoai   # from git
 pi install /path/to/pi-incoai     # from a local checkout
 ```
 
