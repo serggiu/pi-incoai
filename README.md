@@ -57,8 +57,15 @@ trailing `:level` as a thinking level.
 
 ## Models
 
-The bundled baseline catalog is replaced by the live catalog on refresh. Pricing,
-context length, and reasoning support come from `GET /v1/models`.
+The bundled baseline catalog makes the public models available immediately and
+offline. Refreshing from `GET /v1/models` overrides the bundled metadata for the
+same model ids and adds any models the API returns that are not bundled — newly
+released public models and workspace/private models. Pricing, context length, and
+reasoning support come from `GET /v1/models`.
+
+Models that are not part of the bundled snapshot are listed first (new public
+releases and workspace/private models), followed by the bundled public catalog;
+each group is alphabetical.
 
 | Model | Context | Max output | Image input |
 |---|---|---|---|

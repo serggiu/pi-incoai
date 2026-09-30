@@ -91,6 +91,9 @@ const CATALOG_SNAPSHOT: IncoCatalogEntry[] = [
 	{ id: "minimax-m3:fast", name: "MiniMax M3 (Fast)", context_length: 1048576, pricing: { input: 0.6, cached_input: 0.12, output: 2.4 }, capabilities: { reasoning_effort: false }, modalities: { input: ["text", "image"] } },
 ];
 
+/** Ids in the bundled snapshot; any other catalog id comes from the live API. */
+const BUNDLED_MODEL_IDS = new Set(CATALOG_SNAPSHOT.map((entry) => entry.id));
+
 /** Build an error from a failed catalog response, preferring Inco's error envelope. */
 async function catalogError(response: Response): Promise<Error> {
 	const status = `HTTP ${response.status} ${response.statusText}`.trim();
@@ -164,6 +167,32 @@ function toModel(entry: IncoCatalogEntry): Model<"openai-completions"> {
 	};
 }
 
+/** Sort models alphabetically by display name, falling back to id to break ties. */
+function sortModels<T extends { name: string; id: string }>(models: readonly T[]): T[] {
+	return [...models].sort((a, b) => {
+		const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true });
+		return byName !== 0 ? byName : a.id.localeCompare(b.id, undefined, { sensitivity: "base", numeric: true });
+	});
+}
+
+/**
+ * Order the catalog with models that are not part of the bundled snapshot (new
+ * public releases, workspace/private models) first, then the bundled catalog,
+ * each group sorted alphabetically.
+ *
+ * `createProvider` merges the live overlay after the bundled baseline and
+ * appends ids that are absent from it, so without this new models would sit at
+ * the bottom of `/model`.
+ */
+function orderModels<T extends { name: string; id: string }>(models: readonly T[]): T[] {
+	const live: T[] = [];
+	const bundled: T[] = [];
+	for (const model of models) {
+		(BUNDLED_MODEL_IDS.has(model.id) ? bundled : live).push(model);
+	}
+	return [...sortModels(live), ...sortModels(bundled)];
+}
+
 /** Fetch the live catalog, authenticating when a key is available. */
 async function fetchIncoModels(context: RefreshModelsContext): Promise<Model<"openai-completions">[]> {
 	const apiKey = context.credential?.type === "oauth" ? context.credential.access : context.credential?.key;
@@ -178,7 +207,7 @@ async function fetchIncoModels(context: RefreshModelsContext): Promise<Model<"op
 		throw new Error("Inco model catalog returned no models");
 	}
 
-	return entries.filter((entry) => entry && typeof entry.id === "string").map(toModel);
+	return orderModels(entries.filter((entry) => entry && typeof entry.id === "string").map(toModel));
 }
 
 /**
@@ -211,15 +240,21 @@ function incoApiKeyAuth(): ApiKeyAuth {
 }
 
 export default function incoProviderExtension(pi: ExtensionAPI): void {
-	pi.registerProvider(
-		createProvider({
-			id: PROVIDER_ID,
-			name: PROVIDER_NAME,
-			baseUrl: BASE_URL,
-			auth: { apiKey: incoApiKeyAuth() },
-			models: CATALOG_SNAPSHOT.map(toModel),
-			api: openAICompletionsApi(),
-			fetchModels: fetchIncoModels,
-		}),
-	);
+	const provider = createProvider({
+		id: PROVIDER_ID,
+		name: PROVIDER_NAME,
+		baseUrl: BASE_URL,
+		auth: { apiKey: incoApiKeyAuth() },
+		models: sortModels(CATALOG_SNAPSHOT.map(toModel)),
+		api: openAICompletionsApi(),
+		fetchModels: fetchIncoModels,
+	});
+
+	// Pi merges the live catalog after the bundled baseline, which would place new
+	// and workspace/private models last. Expose the ordered catalogs instead.
+	pi.registerProvider({
+		...provider,
+		getModels: () => orderModels(provider.getModels()),
+		getAllModels: () => orderModels(provider.getModels()),
+	});
 }
