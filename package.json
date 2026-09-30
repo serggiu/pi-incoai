@@ -1,16 +1,22 @@
 {
 	"name": "pi-incoai",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Inco AI (inco.ai) model provider extension for the Pi coding agent",
 	"keywords": [
 		"pi-package",
 		"pi",
 		"pi-coding-agent",
+		"extension",
 		"inco",
 		"incoai",
 		"inference",
 		"provider"
 	],
+	"pi": {
+		"extensions": [
+			"./extensions/pi-incoai/index.ts"
+		]
+	},
 	"license": "MIT",
 	"author": "Sergiu Truta",
 	"homepage": "https://github.com/serggiu/pi-incoai#readme",
