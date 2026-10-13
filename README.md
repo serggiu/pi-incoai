@@ -94,7 +94,7 @@ each group is alphabetical.
 ## Development
 
 ```text
-extensions/pi-incoai/index.ts   # the provider extension
+extensions/index.ts   # the provider extension
 ```
 
 Pi loads extensions from the `extensions/` directory of a package. Edit the file
